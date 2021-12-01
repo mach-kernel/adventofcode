@@ -10,28 +10,32 @@
        s/split-lines
        (map #(Integer/parseInt %))))
 
+(defn sum-sliding-window
+  "Generate lazy seq of sliding window sums"
+  ([n]
+   (sum-sliding-window (vec input) 0 n))
+  ([c s f]
+   (let [subsum (reduce + (subvec c s f))]
+     (if (>= f (count c))
+       [subsum]
+       (lazy-seq
+         (cons subsum
+               (sum-sliding-window c (inc s) (inc f))))))))
+
 ; O(N) time, O(1) space (excl. seq)
 (defn solve
   "Produces tuple of [prev, count of number of measurement increases]"
-  []
-  (reduce
-    (fn [[prev ct] x]
-      (if (> x prev)
-        [x (inc ct)]
-        [x ct]))
-    [(Integer/MAX_VALUE) 0]
-    input))
+  ([] (solve input))
+  ([numbers]
+   (reduce
+     (fn [[prev ct] x]
+       (if (> x prev)
+         [x (inc ct)]
+         [x ct]))
+     [(Integer/MAX_VALUE) 0]
+     numbers)))
 
 (defn solve-pt-2
-  "Counts number of monotonic sliding windows"
+  "Solve part 2"
   []
-  (loop [v (vec input)
-         s 0
-         f 3
-         prev (Integer/MAX_VALUE)
-         ct 0]
-    (let [subsum (reduce + (subvec v s f))
-          ct (if (> subsum prev) (inc ct) ct)]
-      (if (< f (count v))
-        (recur v (inc s) (inc f) subsum ct)
-        ct))))
+  (solve (sum-sliding-window 3)))
