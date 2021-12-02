@@ -1,7 +1,8 @@
 (ns advent.core
   (:gen-class)
   (:require [clojure.string :as s]
-            [advent.days.one]))
+            [advent.days.one]
+            [advent.days.two]))
 
 (defn -main
   [& [day run-fn]]
