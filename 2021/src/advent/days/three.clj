@@ -50,9 +50,8 @@
                  (get grouped \0)
                  (get grouped \1))]
       (cond
-        (empty? input) acc
         (= 1 (count input)) (concat acc (map #(Integer/parseInt (str %)) (first input)))
-        (= n0 n1 0) acc
+        (or (= n0 n1 0) (empty? input)) acc
         (and (= n0 n1) (= pred <)) (recur (get grouped \0) (conj acc 0))
         (and (= n0 n1) (= pred >)) (recur (get grouped \1) (conj acc 1))
         :else (recur keep (conj acc (if (pred n0 n1) 0 1)))))))
