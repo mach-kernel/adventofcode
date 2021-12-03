@@ -42,19 +42,23 @@
          acc []]
     (let [grouped (->> input
                        (group-by first)
-                       ; Keep eating LSB until we run out of bins
+                       ; Keep eating MSB until we run out of bins
                        (reduce-kv #(assoc %1 %2 (map (partial drop 1) %3)) {}))
           n0 (count (get grouped \0))
           n1 (count (get grouped \1))
-          keep (if (pred n0 n1)
-                 (get grouped \0)
-                 (get grouped \1))]
+          [next-bit filtered] (if (pred n0 n1)
+                                [0 (get grouped \0)]
+                                [1 (get grouped \1)])]
       (cond
+        ; Concat if left with single
         (= 1 (count input)) (concat acc (map #(Integer/parseInt (str %)) (first input)))
+        ; We are finished
         (or (= n0 n1 0) (empty? input)) acc
+        ; Keep 0 or 1 depending on predicate
         (and (= n0 n1) (= pred <)) (recur (get grouped \0) (conj acc 0))
         (and (= n0 n1) (= pred >)) (recur (get grouped \1) (conj acc 1))
-        :else (recur keep (conj acc (if (pred n0 n1) 0 1)))))))
+        ; General case
+        :else (recur filtered (conj acc next-bit))))))
 
 (defn solve
   []
