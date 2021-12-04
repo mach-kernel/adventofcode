@@ -57,27 +57,6 @@
        (partition-all 5)
        (->Board)))
 
-(defn reduce-first-winner
-  "Yield the first winning board"
-  [[boards _] draw]
-  (let [applied (map (partial mark-number draw) boards)]
-    (if-let [winner (->> applied
-                         (filter board-winning?)
-                         (first))]
-      (reduced [winner draw])
-      [applied draw])))
-
-(defn reduce-last-winner
-  "Yield the last winning board"
-  [[boards _] draw]
-  (let [applied (map (partial mark-number draw) boards)
-        cats (group-by board-winning? applied)
-        win (get cats true)
-        lose (get cats false)]
-    (if (empty? lose)
-      (reduced [(last win) draw])
-      [lose draw])))
-
 (defn sum-unmarked
   "Find sum of unmarked places"
   [^Board {:keys [rows]}]
@@ -89,12 +68,27 @@
        (filter integer?)
        (reduce +)))
 
+(defn game-seq
+  "Seq of progressive game state [[draw win-seq lose-seq]]"
+  [boards draws]
+  (when-first [draw draws]
+    (let [[win lose] (->> boards
+                          (map (partial mark-number draw))
+                          (group-by board-winning?)
+                          (reduce-kv #(assoc %1 (keyword (str %2)) %3) {})
+                          ((juxt :true :false)))
+          round [[draw (into [] win) (into [] lose)]]]
+      (if (empty? lose)
+        round
+        (lazy-cat round (game-seq lose (drop 1 draws)))))))
+
 (defn solve
   []
-  (let [[win-board last-drawn] (reduce reduce-first-winner [boards 0] draws)]
-    (* (sum-unmarked win-board) last-drawn)))
-
-(defn solve-pt-2
-  []
-  (let [[win-board last-drawn] (reduce reduce-last-winner [boards 0] draws)]
-    (* (sum-unmarked win-board) last-drawn)))
+  (let [win-states (->> (game-seq boards draws)
+                        (filter #(not-empty (second %))))
+        [first-draw [first-win]] (first win-states)
+        [last-draw last-wins] (last win-states)]
+    (format
+      "Pt 1: %d\nPt 2: %d\n"
+      (* (sum-unmarked first-win) first-draw)
+      (* (sum-unmarked (last last-wins)) last-draw))))
