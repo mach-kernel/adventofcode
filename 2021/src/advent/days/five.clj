@@ -16,14 +16,19 @@
 (defn line->points
   "Expand a line entry into its points"
   [x1 y1 x2 y2]
-  (let [range-x (range (min x1 x2) (+ 1 (max x1 x2)))
-        range-y (range (min y1 y2) (+ 1 (max y1 y2)))]
-    ; ignore diags
-    (if (= (count range-x) (count range-y))
-      []
-      (if (> (count range-x) (count range-y))
-        (map #(into [] [% (first range-y)]) range-x)
-        (map #(into [] [(first range-x) %]) range-y)))))
+  (let [range-x (if (<= x1 x2)
+                  (range x1 (+ 1 x2))
+                  (range x1 (- x2 1) -1))
+        range-y (if (<= y1 y2)
+                  (range y1 (+ 1 y2))
+                  (range y1 (- y2 1) -1))
+        sz-x (count range-x)
+        sz-y (count range-y)]
+    (cond
+      ; Yield [] for = clause to solve pt 1 again.
+      (= sz-x sz-y) (map #(into [] [%1 %2]) range-x range-y)
+      (> sz-x sz-y) (map #(into [] [% (first range-y)]) range-x)
+      (< sz-x sz-y) (map #(into [] [(first range-x) %]) range-y))))
 
 (defn mark-points
   "Reduces marked points into map m from k [x y]"
