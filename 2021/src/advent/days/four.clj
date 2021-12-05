@@ -77,10 +77,11 @@
                           (group-by board-winning?)
                           (reduce-kv #(assoc %1 (keyword (str %2)) %3) {})
                           ((juxt :true :false)))
-          round [[draw (into [] win) (into [] lose)]]]
+          round [draw (into [] win) (into [] lose)]]
+      (when-not (empty? lose))
       (if (empty? lose)
-        round
-        (lazy-cat round (game-seq lose (drop 1 draws)))))))
+        [round]
+        (lazy-seq (cons round (game-seq lose (drop 1 draws))))))))
 
 (defn solve
   []
