@@ -1,4 +1,4 @@
-(ns advent.days.three
+(ns advent.days.day03
   (:require [clojure.java.io :as io]
             [clojure.string :as s]))
 
