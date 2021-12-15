@@ -1,7 +1,6 @@
 (ns advent.days.day09
   (:require [clojure.java.io :as io]
-            [clojure.string :as s]
-            [clojure.set :as cs]))
+            [clojure.string :as s]))
 
 (def map-line
   (comp
@@ -39,22 +38,54 @@
 (defn keep-lowest
   [y x point]
   (when (every? #(< point %) (coord->adjacent y x))
-    point))
+    [[y x] point]))
 
 (defn row->low-points
   [y xs]
   (->> xs
        (keep-indexed (partial keep-lowest y))))
 
-(defn sink->basin
-  [y x])
+(def basin-count
+  (atom 0))
+
+(def basins
+  (atom {}))
+
+(defn tag-basins
+  [y x prev]
+  (let [val (coord->val [y x])]
+    (when (and (not (= 9 val))
+               (not (= Integer/MAX_VALUE val))
+               (not (contains? @basins [y x]))
+               (<= 0 y (count input))
+               (<= 0 x (count (first input)))
+               (> val prev))
+      ; mark which basin
+      (swap! basins assoc [y x] @basin-count)
+      (tag-basins (+ y 1) x val)
+      (tag-basins (- y 1) x val)
+      (tag-basins y (+ x 1) val)
+      (tag-basins y (- x 1) val))))
 
 (defn solve
   []
+  (reset! basin-count 0)
+  (reset! basins {})
+
   (let [low-pts (->> input
                      (map-indexed row->low-points)
-                     (apply concat))]
-    (+ (count low-pts) (reduce + low-pts))))
+                     (apply concat))
+        pt-1 (+ (count low-pts) (reduce #(+ %1 (last %2)) 0 low-pts))]
 
+    ; tag the basins
+    (doseq [[[y x]] low-pts]
+      (swap! basin-count inc)
+      (tag-basins y x Integer/MIN_VALUE))
 
-
+    (let [pt-2 (->> @basins
+                    (group-by last)
+                    (reduce-kv #(assoc %1 %2 (count %3)) {})
+                    (sort-by #(* -1 (last %)))
+                    (take 3)
+                    (reduce #(* %1 (last %2)) 1))]
+      [pt-1 pt-2])))
