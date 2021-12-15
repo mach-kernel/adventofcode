@@ -8,11 +8,17 @@
        slurp
        s/split-lines))
 
-(def scores
+(def first-char-score
   {\) 3
    \] 57
    \} 1197
    \> 25137})
+
+(def complete-char-score
+  {\) 1
+   \] 2
+   \} 3
+   \> 4})
 
 (def open->close
   {\{ \}
@@ -33,11 +39,25 @@
         (pop stack)
         (reduced {:res :mismatch
                   :char char
-                  :score (scores char)})))))
+                  :score (first-char-score char)})))))
+
+(defn reduce-complete
+  [tscore char]
+  (-> tscore
+      (* 5)
+      (+ (complete-char-score char))))
 
 (defn solve
   []
-  (->> input
-       (map #(reduce validate (list) %))
-       (keep #(:score %))
-       (reduce + 0)))
+  (let [validated (map #(reduce validate (list) %) input)
+        pt-1 (->> validated
+                  (keep #(:score %))
+                  (reduce + 0))
+        completion-scores (->> validated
+                               (filter list?)
+                               (map #(map open->close %))
+                               (map #(reduce reduce-complete 0 %))
+                               (sort))
+        pt-2 (-> completion-scores
+                 (nth (/ (count completion-scores) 2)))]
+    [pt-1 pt-2]))
