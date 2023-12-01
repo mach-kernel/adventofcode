@@ -1,0 +1,33 @@
+{:paths ["src"],
+ :tasks
+ {update-tasks
+  {:doc "Make task entries for files in :paths",
+   :requires
+   ([babashka.fs :as fs]
+    [clojure.edn :as edn]
+    [clojure.string :as str]
+    [clojure.pprint :as pp]),
+   :task
+   (let
+    [{:keys [paths tasks], :as bb-edn}
+     (edn/read-string (slurp "bb.edn"))
+     days
+     (for
+      [day
+       (map
+        (fn
+         [p]
+         (->
+          (str/replace p (re-pattern ".clj") "")
+          (str/split (re-pattern "/"))
+          last))
+        (fs/glob "src/advent23" "*.clj"))]
+      {(symbol day) (symbol (format "advent23.%s/-main" day))})
+     new-bb-edn
+     (with-out-str
+      (->
+       bb-edn
+       (assoc :tasks (reduce merge (cons tasks days)))
+       pp/pprint))]
+    (spit "bb.edn" new-bb-edn))},
+  d01 advent23.d01/-main}}
