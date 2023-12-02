@@ -1,4 +1,4 @@
-(ns advent23.d01 
+(ns advent23.d01
   (:require [clojure.string :as str]))
 
 (def ordinals
@@ -7,53 +7,48 @@
 (def ordinal-re
   (re-pattern ordinals))
 
-(def ordinal-name->ordinal
-  (let [os (str/split ordinals #"\|")] 
-    (apply assoc {} (interleave os (range 1 10)))))
-
 (def rordinal-re
   (re-pattern (str/reverse ordinals)))
 
-(def rordinal-name->ordinal
-  (let [os (str/split (str/reverse ordinals) #"\|")]
-    (apply assoc {} (interleave os (reverse (range 1 10))))))
+(def ordinal-name->ordinal
+  (let [os (str/split ordinals #"\|")
+        nums (map str (range 1 10))]
+    (merge
+     (apply assoc {} (interleave os nums))
+     (apply assoc {} (interleave (map str/reverse os)
+                                 nums)))))
 
 (defn line->decoded
   "Substitute first ordinal match from each side, then take the
    first and last numbers"
- [line] 
- (letfn [(s->numvec
-          [s]
-          (map parse-long (-> s
-                              (str/replace #"[A-Za-z]" "")
-                              (str/split #""))))
-         (mapper
-          [lut]
-          #(str (get lut % %)))]
-   (let [trimmed (str/trim line)
-         reversed (str/reverse trimmed)
-         fwd (str/replace-first 
-              trimmed ordinal-re (mapper ordinal-name->ordinal))
-         bwd (str/replace-first
-              reversed rordinal-re (mapper rordinal-name->ordinal))]
-     [(first (s->numvec fwd))
-      (first (s->numvec bwd))])))
+  [line]
+  (letfn [(->first-num
+            [s]
+            (-> s
+                (str/replace #"[A-Za-z]" "")
+                (str/split #"")
+                first))
+          (replace-first
+            [s re]
+            (str/replace-first s re #(get ordinal-name->ordinal % %)))]
+    (let [trimmed (str/trim line)
+          reversed (str/reverse trimmed)
+          fwd (replace-first trimmed ordinal-re)
+          bwd (replace-first reversed rordinal-re)]
+      (parse-long
+       (str (->first-num fwd) (->first-num bwd))))))
 
-(comment 
+(comment
   (line->decoded "eightone7threenl7mtxbmkpkzqzljrdk")
   (line->decoded "zoneight234"))
 
 (defn lines->calibration
   [s]
-  (let [xf (comp
-            (map line->decoded) 
-            (map #(apply str %))
-            (map parse-long))]
-    #_(transduce xf conj '() (str/split-lines s))
-    (transduce xf + (str/split-lines s))))
+  (reduce + (map line->decoded
+                 (str/split-lines s))))
 
 (defn -main
-  [filename & _] 
+  [filename & _]
   (println (lines->calibration (slurp filename))))
 
 (comment
