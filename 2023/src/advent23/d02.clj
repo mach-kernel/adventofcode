@@ -4,13 +4,13 @@
 (defn read-game
   [s]
   (letfn [(play->pairs
-           [s]
-           (->> (str/split s #",")
-                (map #(filter (comp not str/blank?)
-                              (str/split % #" ")))
-                (map (fn [[v k]]
-                       {(keyword k) (parse-long v)}))
-                (reduce merge)))]
+            [s]
+            (->> (str/split s #",")
+                 (map #(filter (comp not str/blank?)
+                               (str/split % #" ")))
+                 (map (fn [[v k]]
+                        {(keyword k) (parse-long v)}))
+                 (reduce merge)))]
     (let [[game tape] (str/split s #":")
           game (-> game
                    (str/split #"Game ")
@@ -23,24 +23,23 @@
 (defn part-1
   [s]
   (letfn [(valid-game? [{:keys [red green blue] :or {red 0 green 0 blue 0}}]
-           (and (<= red 12)
-                (<= green 13)
-                (<= blue 14)))]
-   (->> s
-        str/split-lines
-        (map read-game)
-        (filter #(every? valid-game? (last %)))
-        (map first)
-        (reduce +))))
+            (and (<= red 12)
+                 (<= green 13)
+                 (<= blue 14)))]
+    (transduce
+     (comp (map read-game)
+           (filter #(every? valid-game? (last %)))
+           (map first))
+     +
+     (str/split-lines s))))
 
 (defn part-2
   [s]
-  (->> s
-       str/split-lines
-       (map read-game)
-       (map #(apply merge-with max (last %)))
-       (map #(reduce * (vals %)))
-       (reduce +)))
+  (let [xf (comp
+            (map read-game)
+            (map #(apply merge-with max (last %)))
+            (map #(reduce * (vals %))))]
+    (transduce xf + (str/split-lines s))))
 
 (comment
   (part-1 (slurp "resources/d02.txt"))
