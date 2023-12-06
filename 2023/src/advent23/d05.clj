@@ -1,7 +1,5 @@
 (ns advent23.d05
-  (:require
-    [clojure.core.reducers :as r]
-    [clojure.string :as str]))
+  (:require [clojure.string :as str]))
 
 (defn line->range-mapper
   [s]
@@ -10,15 +8,18 @@
         lines-by-src (sort-by #(nth % 1) lines)
         lines-by-end (sort-by (fn [[_ s n]]
                                 (+ s n)) lines)
+        line-count (count lines)
         [_ lower] (first lines-by-src)
         [_ us un] (last lines-by-end)]
     (fn [x]
-      (if (or (< x lower) (> x (+ us un)))
+      (if (or (< x lower) (>= x (+ us un)))
         x
-        (or (first (for [[d s n] lines
-                         :let [res (+ d (- x s))]
-                         :when (<= s x (+ s n))]
-                     res))
+        (or (loop [i 0]
+              (when (< i line-count)
+                (let [[d s n] (nth lines i)]
+                  (if (and (>= x s) (< x (+ s n)))
+                    (+ d (- x s))
+                    (recur (inc i))))))
             x)))))
 
 (defn input->maps
@@ -63,24 +64,21 @@
                       light->temp temp->humidity humidity->location]
         seed->location (apply comp (reverse lookup-stack))
         range->smallest-location (fn [[s ofs]]
-                                   #_(println "folding..." s)
-                                   (reduce #(min %1 (seed->location %2))
-                                           Long/MAX_VALUE (range s (+ s ofs))))]
+                                   (let [stop-at (+ s ofs)]
+                                     (loop [i s run Long/MAX_VALUE]
+                                       (when (zero? (mod i 1000000))
+                                         (println "still folding..." s))
+                                       (if (>= i stop-at)
+                                         run
+                                         (recur (inc i)
+                                                (min run (seed->location i)))))))]
     (->> (partition-all 2 seeds)
-         (sort-by first)
          (pmap range->smallest-location)
          sort
          first)))
 
 (comment
-  (let [input (slurp "resources/d05_small.txt")
+  (let [input (slurp "resources/d05.txt")
         context (input->maps input)]
-    #_(part-1 context)
+    (part-1 context)
     (part-2 context)))
-
-(comment
-  (let [min-fold (fn
-                   ([] (Long/MAX_VALUE))
-                   ([a b] (min a (seed->location b))))]
-    #_(r/fold min-fold (vec %))))
-
