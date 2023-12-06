@@ -13,18 +13,20 @@
                    (keep parse-long))]
     (zipmap times dists)))
 
-(defn wait->records
+(defn quad-dist
   [ms record]
-  (letfn [(race [v]
-            (let [d (* v (- ms v))]
-              (when (> d record)
-                d)))]
-    (keep race (range ms))))
+  (let [root-pos (long (Math/floor
+                         (/ (+ ms (Math/sqrt (- (Math/pow ms 2) (* 4 record))))
+                            2)))
+        root-neg (long (Math/floor
+                         (/ (- ms (Math/sqrt (- (Math/pow ms 2) (* 4 record))))
+                            2)))]
+    (abs (- root-pos root-neg))))
 
 (defn part-1
   [s]
   (->> (input->race-table s)
-       (map #(count (apply wait->records %)))
+       (map #(apply quad-dist %))
        (reduce *)))
 
 (defn part-2
@@ -32,8 +34,7 @@
   (let [rt (input->race-table s)]
     (->> {(parse-long (apply str (keys rt)))
           (parse-long (apply str (vals rt)))}
-         (map #(count (apply wait->records %)))
-         (reduce *))))
+         (map #(apply quad-dist %)))))
 
 (comment
   (let [input (slurp "resources/d06.txt")]
