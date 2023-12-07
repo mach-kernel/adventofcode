@@ -38,5 +38,5 @@
 
 (comment
   (let [input (slurp "resources/d06.txt")]
-    (part-1 input)
+    #_(part-1 input)
     (part-2 input)))
