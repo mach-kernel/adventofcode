@@ -40,7 +40,7 @@
     (reduce + (map (comp last last) steps))))
 
 (comment
-  (let [input (slurp "resources/d09_small.txt")
+  (let [input (slurp "resources/d09.txt")
         oasis (->oasis input)]
     (part-1 oasis)
     (part-1 (mapv (comp vec reverse) oasis))))
